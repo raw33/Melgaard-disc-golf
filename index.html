@@ -1063,16 +1063,41 @@
     entries.forEach(({player,index},ri)=>{
       ctx.fillStyle=ri%2===0 ? '#fff' : '#F0F4F1'; ctx.fillRect(tableX,y,tableW,rowH);
       ctx.strokeStyle=line; ctx.lineWidth=1; ctx.strokeRect(tableX,y,tableW,rowH);
+
+      // Player name cell
       ctx.fillStyle=ink; ctx.textAlign='left'; ctx.font='700 18px Arial, sans-serif';
       let nm=displayPlayerName(player,index);
       if(nm.length>18) nm=nm.slice(0,17)+'…';
       ctx.fillText(nm,tableX+18,y+rowH*.62);
+
+      // Color-coded score cells: Ace, Birdie, Par, Bogey, Double+
       ctx.textAlign='center'; ctx.font='800 19px Arial, sans-serif';
       for(let h=0;h<9;h++){
         const s=player.scores[h];
-        ctx.fillText(s===null || s==='' ? '—' : String(s),tableX+nameW+cellW*(h+.5),y+rowH*.62);
+        const x=tableX+nameW+cellW*h;
+        const val=(s===null || s==='') ? null : Number(s);
+
+        if(val!==null && Number.isFinite(val)){
+          let fill='#FFFFFF', stroke='#D8DCDA';
+          if(val===1){ fill='#FFE28A'; stroke='#E0B400'; }       // Ace
+          else if(val===2){ fill='#CDEBD6'; stroke='#6CC191'; }  // Birdie
+          else if(val===3){ fill='#FFFFFF'; stroke='#D8DCDA'; }  // Par
+          else if(val===4){ fill='#FDE3C0'; stroke='#E8A857'; }  // Bogey
+          else if(val>=5){ fill='#F8C9C4'; stroke='#E08079'; }   // Double+
+          ctx.fillStyle=fill;
+          ctx.fillRect(x+2,y+2,cellW-4,rowH-4);
+          ctx.strokeStyle=stroke;
+          ctx.lineWidth=1.5;
+          ctx.strokeRect(x+2,y+2,cellW-4,rowH-4);
+        }
+
+        ctx.fillStyle=ink;
+        ctx.fillText(val===null ? '—' : String(val),x+cellW*.5,y+rowH*.62);
       }
+
+      // Total
       const {total,played}=computeTotals(player);
+      ctx.fillStyle=ink;
       ctx.fillText(played ? String(total) : '—',tableX+nameW+cellW*9.5,y+rowH*.62);
       y+=rowH;
     });
@@ -1081,6 +1106,24 @@
       ctx.fillStyle=muted; ctx.textAlign='left'; ctx.font='600 17px Arial, sans-serif';
       ctx.fillText(`+ ${active.length-6} additional player${active.length-6===1?'':'s'} in the full scorecard`,72,y+26);
     }
+
+    // Shared scorecard color legend
+    const ly=1060;
+    const legendItems=[
+      ['Ace','#FFE28A','#E0B400'],
+      ['Birdie','#CDEBD6','#6CC191'],
+      ['Par','#FFFFFF','#D8DCDA'],
+      ['Bogey','#FDE3C0','#E8A857'],
+      ['Double+','#F8C9C4','#E08079']
+    ];
+    ctx.textAlign='left'; ctx.font='700 13px Arial, sans-serif';
+    let lx=72;
+    legendItems.forEach(([label,fill,stroke])=>{
+      ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.lineWidth=1.2;
+      roundRect(ctx,lx,ly-13,18,18,4,true,true);
+      ctx.fillStyle=muted; ctx.fillText(label,lx+25,ly+1);
+      lx+=label==='Double+' ? 108 : 92;
+    });
 
     // Share footer panel
     const fy=1090;
