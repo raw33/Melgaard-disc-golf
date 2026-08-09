@@ -826,7 +826,6 @@
 
     <div class="controls">
       <button class="btn" id="add-player">+ Add player</button>
-      <button class="btn secondary" id="reset-scores">Reset scores</button>
       <button class="btn ghost" id="share-scorecard">Share scorecard</button>
     </div>
 </section>
@@ -965,6 +964,8 @@
 
 
   const COURSE_URL = 'https://www.aberdeen.sd.us/1076/Disc-Golf-at-Melgaard-Park';
+  const SHARE_URL = 'https://raw33.github.io/Melgaard-disc-golf/';
+  const SHARE_QR_DATA_URI = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASgAAAEoAQAAAADDfFG0AAAB8klEQVR4nO2ay67jMAxDeQb9/1/mLCg7Tu4s7ipWMXb6jAmUEGSakov1i/HnN6CDOqifwyPBLEu2Leer5oy7sn8f9VHFBUkGY+WhZaYr+z3xEkknNMI2Mqxm2rLfiiILEkuYhK8Dr66okisnp+DfqPd5tUJ9pEvYMVS4alF6F6+uqPv++LwGpCv791F4/YgspNL6a6or+z35VVbLcV/rzXo/+XVHWciWAcpGJG5UlrVm/zbKSJ7uIXkFJFqxFY3Zb0BZFgmYLUyk3lmndm/276LkhMW1UXrculTt6NcyPimBJCPP+keqErKeXdlv8ROlUV5VXmOJehOvriiWpEqtPT9XDXn2xwcKWVS5aK3h2surKyo6n0gx5UzUBsDpf91Rox8xMyw21ULIHD/xQGUBDseFKf9KJd3Jr2XgaJWnqygvwdgrj97/QBnh2dgpgwEC+eTXExU3z2zmOCtyKtkuXm1R4OrYr1WRYHrYzuxfR8U44FF4R8Wo9NrHqyXqM2vEcUA0XocfO/XjOma9LWt4iNSPybFTP97H7Xx72vvrPwFRta7s98TrOt8ekYsrq/p7C68vQFWrQrMFZmeRfgX7DSjqsgxRsyqKvoH9O6jlfLv2xHguixx3S0e/Hiio4yBf+sXohXH8xDqWQ+yXfvGg/ifUX5smDQ2B/pudAAAAAElFTkSuQmCC';
 
   function displayPlayerName(player,index){
     return (player.name && player.name.trim()) ? player.name.trim() : 'Player '+(index+1);
@@ -977,7 +978,7 @@
     return diff===0 ? 'E' : (diff>0 ? '+'+diff : String(diff));
   }
 
-  function scorecardImageBlob(){
+  async function scorecardImageBlob(){
     savePlayScore();
     saveState();
 
@@ -1011,49 +1012,52 @@
     ctx.textAlign='left'; ctx.fillStyle=deep; ctx.font='900 34px Arial, sans-serif'; ctx.fillText('RESULTS',72,305);
 
     let y=340;
-    const resultRowH=entries.length<=3 ? 118 : entries.length<=5 ? 94 : 80;
+    const resultRowH=entries.length<=3 ? 112 : entries.length<=5 ? 90 : 74;
     entries.forEach(({player,index},rank)=>{
       const {total,played}=computeTotals(player);
       const rel=playerRelative(player);
       ctx.fillStyle='#fff';
-      roundRect(ctx,72,y,W-144,resultRowH-12,22,true,false);
+      roundRect(ctx,72,y,W-144,resultRowH-10,22,true,false);
 
       ctx.fillStyle=mint;
-      roundRect(ctx,88,y+16,58,58,16,true,false);
-      ctx.fillStyle=deep; ctx.font='900 26px Arial, sans-serif'; ctx.textAlign='center';
-      ctx.fillText(String(rank+1),117,y+54);
+      roundRect(ctx,88,y+14,56,56,16,true,false);
+      ctx.fillStyle=deep; ctx.font='900 25px Arial, sans-serif'; ctx.textAlign='center';
+      ctx.fillText(String(rank+1),116,y+51);
 
-      ctx.textAlign='left'; ctx.fillStyle=ink; ctx.font='800 29px Arial, sans-serif';
-      ctx.fillText(displayPlayerName(player,index),168,y+48);
-      ctx.fillStyle=muted; ctx.font='600 20px Arial, sans-serif';
-      ctx.fillText(`${played}/9 holes scored`,168,y+77);
+      ctx.textAlign='left'; ctx.fillStyle=ink; ctx.font='800 28px Arial, sans-serif';
+      ctx.fillText(displayPlayerName(player,index),164,y+45);
+      ctx.fillStyle=muted; ctx.font='600 19px Arial, sans-serif';
+      ctx.fillText(`${played}/9 holes scored`,164,y+72);
 
-      ctx.textAlign='right'; ctx.fillStyle=ink; ctx.font='900 39px Arial, sans-serif';
-      ctx.fillText(played ? String(total) : '—',W-190,y+53);
+      ctx.textAlign='right'; ctx.fillStyle=ink; ctx.font='900 37px Arial, sans-serif';
+      ctx.fillText(played ? String(total) : '—',W-190,y+50);
       ctx.fillStyle=rel.startsWith('-') ? forest : ink;
-      ctx.font='900 28px Arial, sans-serif'; ctx.fillText(rel,W-102,y+53);
+      ctx.font='900 27px Arial, sans-serif'; ctx.fillText(rel,W-102,y+50);
       y+=resultRowH;
     });
 
     if(!entries.length){
-      ctx.fillStyle='#fff'; roundRect(ctx,72,y,W-144,110,22,true,false);
-      ctx.fillStyle=muted; ctx.font='700 26px Arial, sans-serif'; ctx.textAlign='center';
-      ctx.fillText('No scores recorded yet',W/2,y+66);
-      y+=128;
+      ctx.fillStyle='#fff'; roundRect(ctx,72,y,W-144,100,22,true,false);
+      ctx.fillStyle=muted; ctx.font='700 25px Arial, sans-serif'; ctx.textAlign='center';
+      ctx.fillText('No scores recorded yet',W/2,y+62);
+      y+=118;
     }
 
     // Compact hole-by-hole table
-    y+=18;
-    ctx.textAlign='left'; ctx.fillStyle=deep; ctx.font='900 34px Arial, sans-serif'; ctx.fillText('HOLE BY HOLE',72,y);
-    y+=38;
+    y+=12;
+    ctx.textAlign='left'; ctx.fillStyle=deep; ctx.font='900 32px Arial, sans-serif'; ctx.fillText('HOLE BY HOLE',72,y);
+    y+=34;
 
     const tableX=72, tableW=W-144, nameW=238, cellW=(tableW-nameW)/10;
-    const headerH=54, rowH=Math.max(54,Math.min(72,(H-y-180)/Math.max(2,entries.length+1)));
+    const headerH=50;
+    const footerStart=1070;
+    const availableTableH=Math.max(250,footerStart-y);
+    const rowH=Math.max(48,Math.min(66,(availableTableH-headerH-8)/Math.max(2,entries.length)));
     ctx.fillStyle=forest; roundRect(ctx,tableX,y,tableW,headerH,14,true,false);
-    ctx.fillStyle='#fff'; ctx.font='800 18px Arial, sans-serif'; ctx.textAlign='left'; ctx.fillText('PLAYER',tableX+18,y+35);
+    ctx.fillStyle='#fff'; ctx.font='800 18px Arial, sans-serif'; ctx.textAlign='left'; ctx.fillText('PLAYER',tableX+18,y+33);
     ctx.textAlign='center';
-    for(let h=0;h<9;h++) ctx.fillText(String(h+1),tableX+nameW+cellW*(h+.5),y+35);
-    ctx.fillText('TOT',tableX+nameW+cellW*9.5,y+35);
+    for(let h=0;h<9;h++) ctx.fillText(String(h+1),tableX+nameW+cellW*(h+.5),y+33);
+    ctx.fillText('TOT',tableX+nameW+cellW*9.5,y+33);
     y+=headerH;
 
     entries.forEach(({player,index},ri)=>{
@@ -1074,16 +1078,47 @@
     });
 
     if(active.length>6){
-      ctx.fillStyle=muted; ctx.textAlign='left'; ctx.font='600 18px Arial, sans-serif';
-      ctx.fillText(`+ ${active.length-6} additional player${active.length-6===1?'':'s'} in the full scorecard`,72,y+30);
+      ctx.fillStyle=muted; ctx.textAlign='left'; ctx.font='600 17px Arial, sans-serif';
+      ctx.fillText(`+ ${active.length-6} additional player${active.length-6===1?'':'s'} in the full scorecard`,72,y+26);
     }
 
-    // Footer
-    ctx.fillStyle=deep; ctx.fillRect(0,H-112,W,112);
-    ctx.fillStyle='#fff'; ctx.textAlign='left'; ctx.font='800 24px Arial, sans-serif';
-    ctx.fillText('PLAY MELGAARD PARK DISC GOLF',72,H-66);
-    ctx.font='600 19px Arial, sans-serif';
-    ctx.fillText('Official course information: aberdeen.sd.us/1076/Disc-Golf-at-Melgaard-Park',72,H-34);
+    // Share footer panel
+    const fy=1090;
+    ctx.fillStyle='#fff';
+    roundRect(ctx,52,fy,W-104,210,22,true,false);
+    ctx.strokeStyle='#D7E1DA'; ctx.lineWidth=2; roundRect(ctx,52,fy,W-104,210,22,false,true);
+
+    ctx.textAlign='left'; ctx.fillStyle=deep; ctx.font='900 23px Arial, sans-serif';
+    ctx.fillText('OFFICIAL COURSE INFORMATION',76,fy+38);
+    ctx.fillStyle=ink; ctx.font='700 18px Arial, sans-serif';
+    ctx.fillText('Aberdeen Parks, Recreation & Forestry',76,fy+68);
+    ctx.fillStyle=muted; ctx.font='600 15px Arial, sans-serif';
+    ctx.fillText('aberdeen.sd.us/1076/Disc-Golf-at-Melgaard-Park',76,fy+93);
+
+    ctx.fillStyle=deep; ctx.font='900 21px Arial, sans-serif';
+    ctx.fillText('PLAY & KEEP SCORE',76,fy+133);
+    ctx.fillStyle=ink; ctx.font='700 17px Arial, sans-serif';
+    ctx.fillText('raw33.github.io/Melgaard-disc-golf/',76,fy+160);
+    ctx.fillStyle=muted; ctx.font='600 14px Arial, sans-serif';
+    ctx.fillText('Scan the QR code to open the interactive scorecard.',76,fy+184);
+
+    // Embedded QR code back to the live interactive scorecard.
+    try{
+      const qrImg=new Image();
+      await new Promise((resolve,reject)=>{
+        qrImg.onload=resolve; qrImg.onerror=reject; qrImg.src=SHARE_QR_DATA_URI;
+      });
+      const q=166, qx=W-76-q, qy=fy+22;
+      ctx.fillStyle='#fff'; ctx.fillRect(qx-8,qy-8,q+16,q+16);
+      ctx.drawImage(qrImg,qx,qy,q,q);
+      ctx.fillStyle=muted; ctx.textAlign='center'; ctx.font='700 13px Arial, sans-serif';
+      ctx.fillText('OPEN SCORECARD',qx+q/2,qy+q+18);
+    }catch(e){}
+
+    // Personal attribution, visually distinct from official Parks & Rec information.
+    ctx.fillStyle=deep; ctx.fillRect(0,H-42,W,42);
+    ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.font='600 13.5px Arial, sans-serif';
+    ctx.fillText('Created by Councilman Rich Ward · Independent side project · No City funds used · richward.org',W/2,H-17);
 
     return new Promise(resolve=>canvas.toBlob(resolve,'image/png',0.95));
   }
@@ -1106,7 +1141,7 @@
       const file=new File([blob],`melgaard-disc-golf-${date}.png`,{type:'image/png'});
       const shareData={
         title:'Melgaard Park Disc Golf Scorecard',
-        text:'My round at Melgaard Park Disc Golf in Aberdeen, SD.',
+        text:`My round at Melgaard Park Disc Golf in Aberdeen, SD. Play & keep score: ${SHARE_URL} Official course info: ${COURSE_URL}`,
         files:[file]
       };
       if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
@@ -1761,7 +1796,6 @@
       renderPlayMode();
     }
   };
-  document.getElementById('reset-scores')?.addEventListener('click', resetScoresAction);
   document.getElementById('reset-scores-top')?.addEventListener('click', resetScoresAction);
 
   document.getElementById('share-scorecard')?.addEventListener('click', shareScorecard);
