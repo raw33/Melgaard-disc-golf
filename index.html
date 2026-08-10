@@ -317,7 +317,8 @@
     display:flex;flex-wrap:wrap;gap:8px;font-size:13px;font-weight:700;color:#444;
   }
   .play-pill{background:var(--mint);border:1px solid var(--mapgreen);border-radius:999px;padding:6px 10px;}
-  .hole-nav{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:10px;}
+  .hole-nav{display:grid;grid-template-columns:.72fr 1.14fr 1.14fr;gap:10px;}
+  .hole-nav.final-hole{grid-template-columns:.72fr 2.28fr;}
   .hole-dots{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;}
   .hole-dot{
     border:1.5px solid var(--forest);background:#fff;color:var(--forest-deep);
@@ -365,7 +366,7 @@
     .hole-dots{justify-content:center;gap:5px;}
     .hole-dot{width:34px;height:34px;}
     .hole-nav{
-      position:fixed;left:0;right:0;bottom:0;z-index:20;grid-template-columns:.8fr 1.2fr 1fr;gap:8px;
+      position:fixed;left:0;right:0;bottom:0;z-index:20;grid-template-columns:.72fr 1.14fr 1.14fr;gap:8px;
       padding:10px max(10px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));
       background:rgba(255,255,255,.96);border-top:1px solid var(--line);box-shadow:0 -5px 18px rgba(0,0,0,.10);backdrop-filter:blur(8px);
     }
@@ -431,7 +432,10 @@
   .round-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
   .round-modal-actions .btn{width:100%;min-height:48px;}
   .round-modal-actions .wide{grid-column:1/-1;}
+  .save-next-action{background:#f4b942;color:#302100;border-color:#d89b22;box-shadow:0 3px 10px rgba(174,112,0,.22);}
+  .save-next-action:hover,.save-next-action:focus-visible{background:#e8a92f;color:#231800;border-color:#c88913;}
   #next-hole.finish-ready{background:#075f42;border-color:#075f42;}
+  #save-next-hole.finish-ready{background:#e67e22;color:#fff;border-color:#c96510;box-shadow:0 4px 13px rgba(166,77,0,.28);}
   @media(min-width:641px){.round-modal{align-items:center;}.round-modal-card{border-radius:14px;}}
   @media(max-width:440px){.round-modal-card{padding:18px;border-radius:18px 18px 10px 10px;}.finish-score{gap:6px}.finish-stat strong{font-size:19px;}}
 
@@ -653,10 +657,11 @@
   }
   .play-top-navigation .hole-nav{
     display:grid;
-    grid-template-columns:.8fr 1.2fr 1fr;
+    grid-template-columns:.72fr 1.14fr 1.14fr;
     gap:7px;
     margin:0 0 7px;
   }
+  .play-top-navigation .hole-nav.final-hole{grid-template-columns:.72fr 2.28fr;}
   .play-top-navigation .hole-nav .btn{
     min-height:38px;
     padding:7px 9px;
@@ -735,7 +740,7 @@
   <div class="hole-nav">
     <button class="btn secondary" id="prev-hole" type="button">← Previous</button>
     <button class="btn" id="next-hole" type="button">Save &amp; Navigate →</button>
-    <button class="btn ghost" id="save-next-hole" type="button">Save &amp; next →</button>
+    <button class="btn save-next-action" id="save-next-hole" type="button">Save &amp; next →</button>
   </div>
   <div class="hole-dots top-hole-dots" id="hole-dots" aria-label="Jump to hole"></div>
 </div>
@@ -1732,10 +1737,11 @@
     if(mobileProgressFill) mobileProgressFill.style.width = `${Math.round(holeNum/HOLES*100)}%`;
     if(nextHoleBtn){
       const isFinal = currentHole===HOLES-1;
-      nextHoleBtn.textContent = isFinal ? 'Finish & Navigate ✓' : 'Save & Navigate →';
-      nextHoleBtn.classList.toggle('finish-ready',isFinal);
+      nextHoleBtn.textContent = 'Save & Navigate →';
+      nextHoleBtn.hidden=isFinal;
+      nextHoleBtn.parentElement?.classList.toggle('final-hole',isFinal);
       if(saveNextHoleBtn){
-        saveNextHoleBtn.textContent=isFinal ? 'Finish round ✓' : 'Save & next →';
+        saveNextHoleBtn.textContent=isFinal ? 'Finish Round ✓' : 'Save & next →';
         saveNextHoleBtn.classList.toggle('finish-ready',isFinal);
       }
     }
