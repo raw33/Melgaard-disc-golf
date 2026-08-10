@@ -420,6 +420,8 @@
   .round-modal-icon{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:var(--mint);color:var(--forest-deep);font-size:27px;font-weight:900;margin-bottom:12px;}
   .round-modal h3{font-family:'Anton','Arial Narrow',Impact,Arial,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.3px;font-size:25px;margin:0 0 7px;color:var(--forest-deep);}
   .round-modal p{font-size:14px;line-height:1.5;color:#4f5b54;margin:0 0 14px;}
+  .round-modal .member-beta-link{font-size:11px;text-align:center;margin:2px 0 12px;}
+  .round-modal .member-beta-link a{color:var(--forest-deep);font-weight:800;text-underline-offset:2px;}
   .missing-list{background:#f5f8f6;border:1px solid #dbe5df;border-radius:10px;padding:10px 12px;margin:0 0 16px;font-size:13px;line-height:1.6;}
   .missing-list strong{color:var(--ink);}
   .finish-score{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0 18px;}
@@ -975,6 +977,7 @@
 
 
   const COURSE_URL = 'https://www.aberdeen.sd.us/1076/Disc-Golf-at-Melgaard-Park';
+  const MEMBER_URL = 'https://auth-melgaard-disc-golf.vercel.app/account';
   const SHARE_URL = 'https://raw33.github.io/Melgaard-disc-golf/';
   const SHARE_QR_DATA_URI = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASgAAAEoAQAAAADDfFG0AAAB8klEQVR4nO2ay67jMAxDeQb9/1/mLCg7Tu4s7ipWMXb6jAmUEGSakov1i/HnN6CDOqifwyPBLEu2Leer5oy7sn8f9VHFBUkGY+WhZaYr+z3xEkknNMI2Mqxm2rLfiiILEkuYhK8Dr66okisnp+DfqPd5tUJ9pEvYMVS4alF6F6+uqPv++LwGpCv791F4/YgspNL6a6or+z35VVbLcV/rzXo/+XVHWciWAcpGJG5UlrVm/zbKSJ7uIXkFJFqxFY3Zb0BZFgmYLUyk3lmndm/276LkhMW1UXrculTt6NcyPimBJCPP+keqErKeXdlv8ROlUV5VXmOJehOvriiWpEqtPT9XDXn2xwcKWVS5aK3h2surKyo6n0gx5UzUBsDpf91Rox8xMyw21ULIHD/xQGUBDseFKf9KJd3Jr2XgaJWnqygvwdgrj97/QBnh2dgpgwEC+eTXExU3z2zmOCtyKtkuXm1R4OrYr1WRYHrYzuxfR8U44FF4R8Wo9NrHqyXqM2vEcUA0XocfO/XjOma9LWt4iNSPybFTP97H7Xx72vvrPwFRta7s98TrOt8ekYsrq/p7C68vQFWrQrMFZmeRfgX7DSjqsgxRsyqKvoH9O6jlfLv2xHguixx3S0e/Hiio4yBf+sXohXH8xDqWQ+yXfvGg/ifUX5smDQ2B/pudAAAAAElFTkSuQmCC';
 
@@ -1660,7 +1663,7 @@
     roundModalIcon.textContent='✓';
     roundModalTitle.textContent=hasMissing ? 'Round saved' : 'Round complete';
     const who=(primary.name&&primary.name.trim())?primary.name.trim():'Player '+(currentPlayer+1);
-    roundModalContent.innerHTML=`<p>${hasMissing?'Round finished with one or more holes left blank.':'All recorded players have a score for every hole.'} ${who}'s round is summarized below.</p><div class="finish-score"><div class="finish-stat"><strong>${played?total:'—'}</strong><span>Total</span></div><div class="finish-stat"><strong>${rel}</strong><span>To par</span></div><div class="finish-stat"><strong>${played}/${HOLES}</strong><span>Scored</span></div></div><div class="share-status" id="share-status" aria-live="polite"></div>`;
+    roundModalContent.innerHTML=`<p>${hasMissing?'Round finished with one or more holes left blank.':'All recorded players have a score for every hole.'} ${who}'s round is summarized below.</p><div class="finish-score"><div class="finish-stat"><strong>${played?total:'—'}</strong><span>Total</span></div><div class="finish-stat"><strong>${rel}</strong><span>To par</span></div><div class="finish-stat"><strong>${played}/${HOLES}</strong><span>Scored</span></div></div><p class="member-beta-link"><a href="${MEMBER_URL}">I’m building saved score histories — beta test it here.</a></p><div class="share-status" id="share-status" aria-live="polite"></div>`;
     roundModalActions.innerHTML='';
     modalButton('Share scorecard','wide',shareScorecard);
     modalButton('View scorecard','secondary',()=>{ closeRoundModal(); document.getElementById('scorecard-section')?.scrollIntoView({behavior:'smooth',block:'start'}); });
