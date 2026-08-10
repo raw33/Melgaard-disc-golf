@@ -934,6 +934,7 @@
   ];
   let currentHole = 0;
   let currentPlayer = 0;
+  let transferId = null;
 
   let players = [
     {name:'', scores:new Array(HOLES).fill(null)},
@@ -949,7 +950,8 @@
         date:document.getElementById('round-date')?.value || '',
         players,
         currentHole,
-        currentPlayer
+        currentPlayer,
+        transferId
       }));
     }catch(e){}
   }
@@ -969,6 +971,7 @@
       }));
       currentHole = Number.isInteger(state.currentHole) ? Math.max(0,Math.min(HOLES-1,state.currentHole)) : 0;
       currentPlayer = Number.isInteger(state.currentPlayer) ? Math.max(0,Math.min(players.length-1,state.currentPlayer)) : 0;
+      transferId = typeof state.transferId==='string' && /^[A-Za-z0-9_-]{8,100}$/.test(state.transferId) ? state.transferId : null;
       const dateEl = document.getElementById('round-date');
       if(dateEl && /^\d{4}-\d{2}-\d{2}$/.test(state.date||'')) dateEl.value = state.date;
       return true;
@@ -977,7 +980,7 @@
 
 
   const COURSE_URL = 'https://www.aberdeen.sd.us/1076/Disc-Golf-at-Melgaard-Park';
-  const MEMBER_URL = 'https://auth-melgaard-disc-golf.vercel.app/account';
+  const MEMBER_URL = 'https://auth-melgaard-disc-golf.vercel.app/import';
   const SHARE_URL = 'https://raw33.github.io/Melgaard-disc-golf/';
   const SHARE_QR_DATA_URI = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASgAAAEoAQAAAADDfFG0AAAB8klEQVR4nO2ay67jMAxDeQb9/1/mLCg7Tu4s7ipWMXb6jAmUEGSakov1i/HnN6CDOqifwyPBLEu2Leer5oy7sn8f9VHFBUkGY+WhZaYr+z3xEkknNMI2Mqxm2rLfiiILEkuYhK8Dr66okisnp+DfqPd5tUJ9pEvYMVS4alF6F6+uqPv++LwGpCv791F4/YgspNL6a6or+z35VVbLcV/rzXo/+XVHWciWAcpGJG5UlrVm/zbKSJ7uIXkFJFqxFY3Zb0BZFgmYLUyk3lmndm/276LkhMW1UXrculTt6NcyPimBJCPP+keqErKeXdlv8ROlUV5VXmOJehOvriiWpEqtPT9XDXn2xwcKWVS5aK3h2surKyo6n0gx5UzUBsDpf91Rox8xMyw21ULIHD/xQGUBDseFKf9KJd3Jr2XgaJWnqygvwdgrj97/QBnh2dgpgwEC+eTXExU3z2zmOCtyKtkuXm1R4OrYr1WRYHrYzuxfR8U44FF4R8Wo9NrHqyXqM2vEcUA0XocfO/XjOma9LWt4iNSPybFTP97H7Xx72vvrPwFRta7s98TrOt8ekYsrq/p7C68vQFWrQrMFZmeRfgX7DSjqsgxRsyqKvoH9O6jlfLv2xHguixx3S0e/Hiio4yBf+sXohXH8xDqWQ+yXfvGg/ifUX5smDQ2B/pudAAAAAElFTkSuQmCC';
 
@@ -1636,6 +1639,24 @@
     roundModalActions.appendChild(b);
   }
 
+  function memberImportUrl(){
+    if(!transferId) transferId=(crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`).replace(/[^A-Za-z0-9_-]/g,'');
+    const payload={
+      date:document.getElementById('round-date')?.value || '',
+      players:participatingPlayers().map(({player,index})=>({
+        name:(player.name&&player.name.trim())?player.name.trim():'Player '+(index+1),
+        scores:player.scores.map(score=>score===''?null:score)
+      })),
+      transferId
+    };
+    saveState();
+    const bytes=new TextEncoder().encode(JSON.stringify(payload));
+    let binary='';
+    bytes.forEach(byte=>{ binary+=String.fromCharCode(byte); });
+    const encoded=btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    return `${MEMBER_URL}#round=${encoded}`;
+  }
+
   function showIncompleteRound(missing){
     if(!roundModal) return;
     roundModalIcon.textContent='!';
@@ -1663,7 +1684,7 @@
     roundModalIcon.textContent='✓';
     roundModalTitle.textContent=hasMissing ? 'Round saved' : 'Round complete';
     const who=(primary.name&&primary.name.trim())?primary.name.trim():'Player '+(currentPlayer+1);
-    roundModalContent.innerHTML=`<p>${hasMissing?'Round finished with one or more holes left blank.':'All recorded players have a score for every hole.'} ${who}'s round is summarized below.</p><div class="finish-score"><div class="finish-stat"><strong>${played?total:'—'}</strong><span>Total</span></div><div class="finish-stat"><strong>${rel}</strong><span>To par</span></div><div class="finish-stat"><strong>${played}/${HOLES}</strong><span>Scored</span></div></div><p class="member-beta-link"><a href="${MEMBER_URL}">I’m building saved score histories — beta test it here.</a></p><div class="share-status" id="share-status" aria-live="polite"></div>`;
+    roundModalContent.innerHTML=`<p>${hasMissing?'Round finished with one or more holes left blank.':'All recorded players have a score for every hole.'} ${who}'s round is summarized below.</p><div class="finish-score"><div class="finish-stat"><strong>${played?total:'—'}</strong><span>Total</span></div><div class="finish-stat"><strong>${rel}</strong><span>To par</span></div><div class="finish-stat"><strong>${played}/${HOLES}</strong><span>Scored</span></div></div><p class="member-beta-link"><a href="${memberImportUrl()}">I’m building saved score histories — beta test it here.</a></p><div class="share-status" id="share-status" aria-live="polite"></div>`;
     roundModalActions.innerHTML='';
     modalButton('Share scorecard','wide',shareScorecard);
     modalButton('View scorecard','secondary',()=>{ closeRoundModal(); document.getElementById('scorecard-section')?.scrollIntoView({behavior:'smooth',block:'start'}); });
@@ -1849,6 +1870,7 @@
   const resetScoresAction = ()=>{
     if(confirm('Clear all scores for this round? Player names will be kept.')){
       players.forEach(p=> p.scores = new Array(HOLES).fill(null));
+      transferId=null;
       render();
       renderPlayMode();
     }
