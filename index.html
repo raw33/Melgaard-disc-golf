@@ -317,7 +317,7 @@
     display:flex;flex-wrap:wrap;gap:8px;font-size:13px;font-weight:700;color:#444;
   }
   .play-pill{background:var(--mint);border:1px solid var(--mapgreen);border-radius:999px;padding:6px 10px;}
-  .hole-nav{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .hole-nav{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:10px;}
   .hole-dots{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;}
   .hole-dot{
     border:1.5px solid var(--forest);background:#fff;color:var(--forest-deep);
@@ -365,7 +365,7 @@
     .hole-dots{justify-content:center;gap:5px;}
     .hole-dot{width:34px;height:34px;}
     .hole-nav{
-      position:fixed;left:0;right:0;bottom:0;z-index:20;grid-template-columns:1fr 1.35fr;gap:8px;
+      position:fixed;left:0;right:0;bottom:0;z-index:20;grid-template-columns:.8fr 1.2fr 1fr;gap:8px;
       padding:10px max(10px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));
       background:rgba(255,255,255,.96);border-top:1px solid var(--line);box-shadow:0 -5px 18px rgba(0,0,0,.10);backdrop-filter:blur(8px);
     }
@@ -653,7 +653,7 @@
   }
   .play-top-navigation .hole-nav{
     display:grid;
-    grid-template-columns:1fr 1.25fr;
+    grid-template-columns:.8fr 1.2fr 1fr;
     gap:7px;
     margin:0 0 7px;
   }
@@ -734,7 +734,8 @@
 <div class="play-top-navigation">
   <div class="hole-nav">
     <button class="btn secondary" id="prev-hole" type="button">← Previous</button>
-    <button class="btn" id="next-hole" type="button">Save &amp; next →</button>
+    <button class="btn" id="next-hole" type="button">Save &amp; Navigate →</button>
+    <button class="btn ghost" id="save-next-hole" type="button">Save &amp; next →</button>
   </div>
   <div class="hole-dots top-hole-dots" id="hole-dots" aria-label="Jump to hole"></div>
 </div>
@@ -934,6 +935,8 @@
   ];
   let currentHole = 0;
   let currentPlayer = 0;
+  let lastQuickScore = null;
+  let lastQuickAt = 0;
   let transferId = null;
 
   let players = [
@@ -1266,6 +1269,7 @@
   const mobileProgressText = document.getElementById('mobile-progress-text');
   const mobileProgressFill = document.getElementById('mobile-progress-fill');
   const nextHoleBtn = document.getElementById('next-hole');
+  const saveNextHoleBtn = document.getElementById('save-next-hole');
   const prevHoleBtn = document.getElementById('prev-hole');
   const roundModal = document.getElementById('round-modal');
   const roundModalIcon = document.getElementById('round-modal-icon');
@@ -1479,7 +1483,11 @@
       b.type='button'; b.className='score-chip'+(active===item.score?' active':'');
       b.innerHTML=`<span>${item.score}</span><small>${item.label}</small>`;
       b.addEventListener('click',()=>{
+        const now=Date.now();
+        const shortcut=lastQuickScore===item.score && now-lastQuickAt<450;
+        lastQuickScore=item.score; lastQuickAt=now;
         playScore.value=item.score; savePlayScore(); render(); renderPlayMode();
+        if(shortcut){ lastQuickScore=null; lastQuickAt=0; setTimeout(()=>advanceHole(false),0); }
       });
       scoreQuick.appendChild(b);
     });
@@ -1724,8 +1732,12 @@
     if(mobileProgressFill) mobileProgressFill.style.width = `${Math.round(holeNum/HOLES*100)}%`;
     if(nextHoleBtn){
       const isFinal = currentHole===HOLES-1;
-      nextHoleBtn.textContent = isFinal ? 'Finish round ✓' : 'Save & next →';
+      nextHoleBtn.textContent = isFinal ? 'Finish & Navigate ✓' : 'Save & Navigate →';
       nextHoleBtn.classList.toggle('finish-ready',isFinal);
+      if(saveNextHoleBtn){
+        saveNextHoleBtn.textContent=isFinal ? 'Finish round ✓' : 'Save & next →';
+        saveNextHoleBtn.classList.toggle('finish-ready',isFinal);
+      }
     }
     if(prevHoleBtn) prevHoleBtn.disabled = currentHole===0;
     renderHoleDots();
@@ -1886,19 +1898,20 @@
     render();
     renderPlayMode();
   });
+  playScore.addEventListener('dblclick', ()=>advanceHole(false));
   prevHoleBtn.addEventListener('click', ()=>{
     savePlayScore();
     if(currentHole>0) currentHole -= 1;
     render();
     renderPlayMode();
   });
-  nextHoleBtn.addEventListener('click', ()=>{
+  function advanceHole(withNavigation){
     savePlayScore();
     if(currentHole===HOLES-1){
       finishRound();
       return;
     }
-    if(currentHoleIsComplete()){
+    if(withNavigation && currentHoleIsComplete()){
       showWalkTransition(currentHole);
       return;
     }
@@ -1906,7 +1919,9 @@
     currentHole += 1;
     render();
     renderPlayMode();
-  });
+  }
+  nextHoleBtn.addEventListener('click', ()=>advanceHole(true));
+  saveNextHoleBtn?.addEventListener('click', ()=>advanceHole(false));
   stayCurrentHoleBtn?.addEventListener('click', closeWalkTransition);
   startNextHoleBtn?.addEventListener('click', ()=>{
     const fromHole=parseInt(walkTransition?.dataset.fromHole || currentHole,10);
